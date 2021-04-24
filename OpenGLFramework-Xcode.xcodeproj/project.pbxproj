@@ -7,7 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0141AF2C2420D64800E38EBE /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0141AF2B2420D64800E38EBE /* main.cpp */; };
+		0141AF382420D69500E38EBE /* textfile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0141AF332420D69500E38EBE /* textfile.cpp */; };
+		0141AF392420D69500E38EBE /* glad.c in Sources */ = {isa = PBXBuildFile; fileRef = 0141AF342420D69500E38EBE /* glad.c */; };
+		0141AF3A2420D69500E38EBE /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0141AF352420D69500E38EBE /* main.cpp */; };
+		0141AF3D2420D6AE00E38EBE /* libglfw.3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 0141AF3C2420D6AE00E38EBE /* libglfw.3.dylib */; };
+		0141AF3E2420D6AE00E38EBE /* libglfw.3.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 0141AF3C2420D6AE00E38EBE /* libglfw.3.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		D179FC832627019C004AEBC5 /* Matrices.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D179FC812627019C004AEBC5 /* Matrices.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -20,11 +25,32 @@
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 		};
+		0141AF3F2420D6AE00E38EBE /* Embed Libraries */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				0141AF3E2420D6AE00E38EBE /* libglfw.3.dylib in Embed Libraries */,
+			);
+			name = "Embed Libraries";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		0141AF282420D64800E38EBE /* OpenGLFramework-Xcode */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "OpenGLFramework-Xcode"; sourceTree = BUILT_PRODUCTS_DIR; };
-		0141AF2B2420D64800E38EBE /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		0141AF322420D69500E38EBE /* shader.vs */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = shader.vs; sourceTree = "<group>"; };
+		0141AF332420D69500E38EBE /* textfile.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = textfile.cpp; sourceTree = "<group>"; };
+		0141AF342420D69500E38EBE /* glad.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = glad.c; sourceTree = "<group>"; };
+		0141AF352420D69500E38EBE /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		0141AF362420D69500E38EBE /* shader.fs */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = shader.fs; sourceTree = "<group>"; };
+		0141AF372420D69500E38EBE /* textfile.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = textfile.h; sourceTree = "<group>"; };
+		0141AF3C2420D6AE00E38EBE /* libglfw.3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libglfw.3.dylib; path = lib/libglfw.3.dylib; sourceTree = "<group>"; };
+		D179FC7F2627019C004AEBC5 /* Vectors.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Vectors.h; sourceTree = "<group>"; };
+		D179FC802627019C004AEBC5 /* tiny_obj_loader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tiny_obj_loader.h; sourceTree = "<group>"; };
+		D179FC812627019C004AEBC5 /* Matrices.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Matrices.cpp; sourceTree = "<group>"; };
+		D179FC822627019C004AEBC5 /* Matrices.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Matrices.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -32,6 +58,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0141AF3D2420D6AE00E38EBE /* libglfw.3.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -43,6 +70,7 @@
 			children = (
 				0141AF2A2420D64800E38EBE /* OpenGLFramework-Xcode */,
 				0141AF292420D64800E38EBE /* Products */,
+				0141AF3B2420D6AE00E38EBE /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -57,9 +85,26 @@
 		0141AF2A2420D64800E38EBE /* OpenGLFramework-Xcode */ = {
 			isa = PBXGroup;
 			children = (
-				0141AF2B2420D64800E38EBE /* main.cpp */,
+				D179FC812627019C004AEBC5 /* Matrices.cpp */,
+				D179FC822627019C004AEBC5 /* Matrices.h */,
+				D179FC802627019C004AEBC5 /* tiny_obj_loader.h */,
+				D179FC7F2627019C004AEBC5 /* Vectors.h */,
+				0141AF342420D69500E38EBE /* glad.c */,
+				0141AF352420D69500E38EBE /* main.cpp */,
+				0141AF362420D69500E38EBE /* shader.fs */,
+				0141AF322420D69500E38EBE /* shader.vs */,
+				0141AF332420D69500E38EBE /* textfile.cpp */,
+				0141AF372420D69500E38EBE /* textfile.h */,
 			);
 			path = "OpenGLFramework-Xcode";
+			sourceTree = "<group>";
+		};
+		0141AF3B2420D6AE00E38EBE /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				0141AF3C2420D6AE00E38EBE /* libglfw.3.dylib */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -72,6 +117,7 @@
 				0141AF242420D64800E38EBE /* Sources */,
 				0141AF252420D64800E38EBE /* Frameworks */,
 				0141AF262420D64800E38EBE /* CopyFiles */,
+				0141AF3F2420D6AE00E38EBE /* Embed Libraries */,
 			);
 			buildRules = (
 			);
@@ -119,7 +165,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0141AF2C2420D64800E38EBE /* main.cpp in Sources */,
+				0141AF382420D69500E38EBE /* textfile.cpp in Sources */,
+				D179FC832627019C004AEBC5 /* Matrices.cpp in Sources */,
+				0141AF392420D69500E38EBE /* glad.c in Sources */,
+				0141AF3A2420D69500E38EBE /* main.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -239,6 +288,11 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
+				HEADER_SEARCH_PATHS = include/;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/lib",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -247,6 +301,11 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
+				HEADER_SEARCH_PATHS = include/;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/lib",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;

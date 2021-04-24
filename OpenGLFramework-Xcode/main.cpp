@@ -195,6 +195,18 @@ Matrix4 scaling(Vector3 vec)
 // [TODO] given a float value then ouput a rotation matrix alone axis-X (rotate alone axis-X)
 Matrix4 rotateX(GLfloat val)
 {
+    if(click==true&&mode=='R'){
+            end_y =cursor_y;
+            models[cur_idx].rotation[1]+=-(end_y-start_y);
+            start_y=end_y;
+        //cout<<models[cur_idx].position[0]<<" "<<models[cur_idx].position[1]<<endl;
+    } // we can drag object after clicking
+   // cout<< models[cur_idx].position[0]<<" "<<models[cur_idx].position[1]<<endl;
+    double pi=3.141592;
+    float theta=models[cur_idx].rotation[1]/180*pi;
+    
+    
+    
 	Matrix4 mat;
 
 	/*
@@ -202,6 +214,11 @@ Matrix4 rotateX(GLfloat val)
 		...
 	);
 	*/
+    mat=Matrix4(
+    1,0,0,0,
+    0,cos(theta),-sin(theta),0,
+    0,sin(theta),cos(theta),0,
+    0,0,0,1);
 
 	return mat;
 }
@@ -209,13 +226,30 @@ Matrix4 rotateX(GLfloat val)
 // [TODO] given a float value then ouput a rotation matrix alone axis-Y (rotate alone axis-Y)
 Matrix4 rotateY(GLfloat val)
 {
-	Matrix4 mat;
+    if(click==true&&mode=='R'){
+            end_x =cursor_x;
+            models[cur_idx].rotation[0]+=(end_x-start_x);
+            start_x=end_x;
+        //cout<<models[cur_idx].position[0]<<" "<<models[cur_idx].position[1]<<endl;
+    } // we can drag object after clicking
+   // cout<< models[cur_idx].position[0]<<" "<<models[cur_idx].position[1]<<endl;
+    double pi=3.141592;
+    float theta=models[cur_idx].rotation[0]/180*pi;
+    
+    
+    
+    Matrix4 mat;
 
 	/*
 	mat = Matrix4(
 		...
 	);
 	*/
+    mat=Matrix4(
+    cos(theta),0,sin(theta),0,
+    0,1,0,0,
+    -sin(theta),0,cos(theta),0,
+    0,0,0,1);
 
 	return mat;
 }
@@ -223,6 +257,14 @@ Matrix4 rotateY(GLfloat val)
 // [TODO] given a float value then ouput a rotation matrix alone axis-Z (rotate alone axis-Z)
 Matrix4 rotateZ(GLfloat val)
 {
+    
+    
+    if(z_time>0&&mode=='R'){
+        models[cur_idx].rotation[2]+=scroll_z;
+        --z_time;
+    }
+    double pi=3.141592;
+    float theta=models[cur_idx].rotation[2]/180*pi;
 	Matrix4 mat;
 
 	/*
@@ -230,6 +272,11 @@ Matrix4 rotateZ(GLfloat val)
 		...
 	);
 	*/
+    mat=Matrix4(
+    cos(theta),-sin(theta),0,0,
+    sin(theta),cos(theta),0,0,
+    0,0,1,0,
+    0,0,0,1);
 
 	return mat;
 }
@@ -386,6 +433,7 @@ void RenderScene(void) {
 	// [TODO] update translation, rotation and scaling
     T=translate(models[cur_idx].position); // update translation matrix
     S=scaling(models[cur_idx].scale); //update scaling matrix
+    R=rotate(models[cur_idx].rotation);
 	Matrix4 MVP,origin_mvp;
 	GLfloat mvp[16];
     origin_mvp=Matrix4 (
@@ -449,6 +497,9 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
             break;
         case 'S':
             mode='S';
+            break;
+        case 'R':
+            mode='R';
             break;
         default:
             break;

@@ -30,7 +30,7 @@ int starting_press_y = -1;
 double cursor_x=0,cursor_y=0,start_x=0,start_y=0,end_x=0,end_y=0,scroll_z=0,z_time=0;
 char mode='T';
 bool click=false;// to remeber the state of mouse, by myself;
-
+int change_model=0,now_model=0;
 enum TransMode
 {
 	GeoTranslation = 0,
@@ -125,24 +125,24 @@ Matrix4 translate(Vector3 vec)
 {
 	Matrix4 mat;
     if(click==true&&mode=='T'){
-            end_x=cursor_x;
-            end_y =cursor_y;
-            models[cur_idx].position[0]+=end_x-start_x;
-            models[cur_idx].position[1]+=-(end_y-start_y);
-            start_x=end_x;
-            start_y=end_y;
+        end_x=cursor_x;
+        end_y =cursor_y;
+        models[cur_idx].position[0]+=(end_x-start_x)/WINDOW_WIDTH;
+        models[cur_idx].position[1]+=-(end_y-start_y)/WINDOW_HEIGHT;
+        start_x=end_x;
+        start_y=end_y;
         //cout<<models[cur_idx].position[0]<<" "<<models[cur_idx].position[1]<<endl;
     } // we can drag object after clicking
    // cout<< models[cur_idx].position[0]<<" "<<models[cur_idx].position[1]<<endl;
     if(z_time>0&&mode=='T'){
-        models[cur_idx].position[2]+=scroll_z;
+        models[cur_idx].position[2]+=scroll_z/100;
         --z_time;
     }
     //cout<< models[cur_idx].position[2]<<endl;
     mat=Matrix4(
-    1,0,0,models[cur_idx].position[0]/WINDOW_WIDTH,
-    0,1,0,models[cur_idx].position[1]/WINDOW_HEIGHT,
-    0,0,1,models[cur_idx].position[2]/100,
+    1,0,0,models[cur_idx].position[0],
+    0,1,0,models[cur_idx].position[1],
+    0,0,1,models[cur_idx].position[2],
     0,0,0,1);
 
 	/*
@@ -157,18 +157,20 @@ Matrix4 translate(Vector3 vec)
 // [TODO] given a scaling vector then output a Matrix4 (Scaling Matrix)
 Matrix4 scaling(Vector3 vec)
 {
+    
+ 
     if(click==true&&mode=='S'){
             end_x=cursor_x;
             end_y =cursor_y;
-            models[cur_idx].scale[0]+=end_x-start_x;
-            models[cur_idx].scale[1]+=-(end_y-start_y);
+            models[cur_idx].scale[0]+=(end_x-start_x)/WINDOW_WIDTH;
+            models[cur_idx].scale[1]+=-(end_y-start_y)/WINDOW_HEIGHT;
             start_x=end_x;
             start_y=end_y;
         //cout<<models[cur_idx].position[0]<<" "<<models[cur_idx].position[1]<<endl;
     } // we can drag object after clicking
    // cout<< models[cur_idx].position[0]<<" "<<models[cur_idx].position[1]<<endl;
     if(z_time>0&&mode=='S'){
-        models[cur_idx].scale[2]+=scroll_z;
+        models[cur_idx].scale[2]+=scroll_z/100;
         --z_time;
     }
 	Matrix4 mat;
@@ -180,7 +182,10 @@ Matrix4 scaling(Vector3 vec)
 	*/
     
     mat=Matrix4(
-                
+    models[cur_idx].scale[0],0,0,0,
+    0,models[cur_idx].scale[1],0,0,
+    0,0,models[cur_idx].scale[2],0,
+    0,0,0,1
                 );
 
 	return mat;
@@ -379,7 +384,8 @@ void RenderScene(void) {
 
 	Matrix4 T, R, S;
 	// [TODO] update translation, rotation and scaling
-    T=translate(models[cur_idx].position);
+    T=translate(models[cur_idx].position); // update translation matrix
+    S=scaling(models[cur_idx].scale); //update scaling matrix
 	Matrix4 MVP,origin_mvp;
 	GLfloat mvp[16];
     origin_mvp=Matrix4 (
@@ -425,12 +431,24 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
 	// [TODO] Call back function for keyboard
     switch (key) {
         case 'Z':
-            ++cur_idx;
-            if (cur_idx>=5) {
-                cur_idx=0;
+        case 'X':
+            //cout<<now_model<<" "<<change_model<<endl;
+            if(change_model-now_model>10){     //to avoid changing models too quickly
+                ++cur_idx;
+                if (cur_idx>=5) {
+                    cur_idx=0;
+                }
+                now_model=change_model;
             }
-            
+           
             //std::cout<<cur_idx<<endl;
+            break;
+        
+        case 'T':
+            mode='T';
+            break;
+        case 'S':
+            mode='S';
             break;
         default:
             break;
@@ -819,7 +837,7 @@ int main(int argc, char **argv)
 	// main loop
     while (!glfwWindowShouldClose(window))
     {
-       
+        change_model++;
         // render
         RenderScene();
         

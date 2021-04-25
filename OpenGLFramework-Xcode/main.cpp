@@ -157,8 +157,6 @@ Matrix4 translate(Vector3 vec)
 // [TODO] given a scaling vector then output a Matrix4 (Scaling Matrix)
 Matrix4 scaling(Vector3 vec)
 {
-    
- 
     if(click==true&&mode=='S'){
             end_x=cursor_x;
             end_y =cursor_y;
@@ -166,9 +164,7 @@ Matrix4 scaling(Vector3 vec)
             models[cur_idx].scale[1]+=-(end_y-start_y)/WINDOW_HEIGHT;
             start_x=end_x;
             start_y=end_y;
-        //cout<<models[cur_idx].position[0]<<" "<<models[cur_idx].position[1]<<endl;
-    } // we can drag object after clicking
-   // cout<< models[cur_idx].position[0]<<" "<<models[cur_idx].position[1]<<endl;
+    }
     if(z_time>0&&mode=='S'){
         models[cur_idx].scale[2]+=scroll_z/100;
         --z_time;
@@ -199,21 +195,10 @@ Matrix4 rotateX(GLfloat val)
             end_y =cursor_y;
             models[cur_idx].rotation[1]+=-(end_y-start_y);
             start_y=end_y;
-        //cout<<models[cur_idx].position[0]<<" "<<models[cur_idx].position[1]<<endl;
-    } // we can drag object after clicking
-   // cout<< models[cur_idx].position[0]<<" "<<models[cur_idx].position[1]<<endl;
+    }
     double pi=3.141592;
     float theta=models[cur_idx].rotation[1]/180*pi;
-    
-    
-    
 	Matrix4 mat;
-
-	/*
-	mat = Matrix4(
-		...
-	);
-	*/
     mat=Matrix4(
     1,0,0,0,
     0,cos(theta),-sin(theta),0,
@@ -230,21 +215,10 @@ Matrix4 rotateY(GLfloat val)
             end_x =cursor_x;
             models[cur_idx].rotation[0]+=(end_x-start_x);
             start_x=end_x;
-        //cout<<models[cur_idx].position[0]<<" "<<models[cur_idx].position[1]<<endl;
-    } // we can drag object after clicking
-   // cout<< models[cur_idx].position[0]<<" "<<models[cur_idx].position[1]<<endl;
+    }
     double pi=3.141592;
     float theta=models[cur_idx].rotation[0]/180*pi;
-    
-    
-    
     Matrix4 mat;
-
-	/*
-	mat = Matrix4(
-		...
-	);
-	*/
     mat=Matrix4(
     cos(theta),0,sin(theta),0,
     0,1,0,0,
@@ -258,7 +232,6 @@ Matrix4 rotateY(GLfloat val)
 Matrix4 rotateZ(GLfloat val)
 {
     
-    
     if(z_time>0&&mode=='R'){
         models[cur_idx].rotation[2]+=scroll_z;
         --z_time;
@@ -266,12 +239,6 @@ Matrix4 rotateZ(GLfloat val)
     double pi=3.141592;
     float theta=models[cur_idx].rotation[2]/180*pi;
 	Matrix4 mat;
-
-	/*
-	mat = Matrix4(
-		...
-	);
-	*/
     mat=Matrix4(
     cos(theta),-sin(theta),0,0,
     sin(theta),cos(theta),0,0,
@@ -290,13 +257,37 @@ Matrix4 rotate(Vector3 vec)
 void setViewingMatrix()
 {
 	// view_matrix[...] = ...
-    view_matrix={
-        1,0,0,0,
-        0,1,0,0,
-        0,0,1,-2,
-        0,0,0,1
+    Vector3 eye=main_camera.position;
+    Vector3 center=main_camera.center;
+    Vector3 up=main_camera.up_vector;
+    Vector3 Rx=(center-eye).cross((up-eye));
+    Vector3 Rz=-(center-eye);
+    Rx=Rx.normalize();
+    Rz=Rz.normalize();
+    Vector3 Ry=Rz.cross(Rx);
+    Matrix4 viewRotate,eyeMatrix;
+    viewRotate=Matrix4(
+    Rx[0],Ry[0],Rz[0],0,
+    Rx[1],Ry[1],Rz[1],0,
+    Rx[2],Ry[2],Rz[2],0,
+    0,0,0,1
+                       
+                       );
+    eyeMatrix=Matrix4(
+    1,0,0,-eye[0],
+    0,1,0,-eye[1],
+    0,0,1,-eye[2],
+    0,0,0,1);
+   viewRotate=viewRotate.invert();
+   view_matrix=viewRotate*eyeMatrix;
+    /*for(int i=0;i<=15;++i){
+        cout<<view_matrix[i]<<" ";
+        if((i%4)==3){
+            cout<<endl;
+        }
+    }*/
     
-    };
+ 
 }
 
 // [TODO] compute orthogonal projection matrix
@@ -304,6 +295,25 @@ void setOrthogonal()
 {
 	cur_proj_mode = Orthogonal;
 	// project_matrix [...] = ...
+    double top=proj.top;
+    double bottom=proj.bottom;                              //bottom = -top;
+    double right=proj.right;                   //right = top * aspect
+    double left=proj.left;                             //left = -right
+    float x=2/(right-left);
+    float y=2/(top-bottom);
+    float z=-2/(proj.farClip-proj.nearClip);
+    float z1=-(proj.farClip+proj.nearClip)/(proj.farClip-proj.nearClip);
+    float x1=-(right+left)/(right-left);
+    float y1=-(top+bottom)/(top-bottom);
+    //cout<<proj.aspect<<endl
+    
+    project_matrix={
+        x,0,0,x1,
+        0,y,0,y1,
+        0,0,z,z1,
+        0,0,0,1
+    };
+    cout<<" x "<<x<<" y "<<y<<" z "<<z<<" x1 "<<x1<<" y1 "<<y1<<" z1 "<<z1<<endl;
 }
 
 // [TODO] compute persepective projection matrix
@@ -321,13 +331,13 @@ void setPerspective()
     float z=-(proj.nearClip+proj.farClip)/(proj.farClip-proj.nearClip);
     float z1=2*proj.farClip*proj.nearClip/(proj.nearClip-proj.farClip);
     //cout<<proj.aspect<<endl
-    cout<<x<<" "<<y<<" "<<z<<" "<<z1;
     project_matrix={
         x,0,0,0,
         0,y,0,0,
         0,0,z,z1,
         0,0,-1,0
     };
+    
 }
 
 
@@ -479,8 +489,6 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
 	// [TODO] Call back function for keyboard
     switch (key) {
         case 'Z':
-        case 'X':
-            //cout<<now_model<<" "<<change_model<<endl;
             if(change_model-now_model>10){     //to avoid changing models too quickly
                 ++cur_idx;
                 if (cur_idx>=5) {
@@ -488,6 +496,16 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
                 }
                 now_model=change_model;
             }
+        case 'X':
+            //cout<<now_model<<" "<<change_model<<endl;
+            if(change_model-now_model>10){     //to avoid changing models too quickly
+                --cur_idx;
+                if (cur_idx<0) {
+                    cur_idx=models.size()-1;
+                }
+                now_model=change_model;
+            }
+          
            
             //std::cout<<cur_idx<<endl;
             break;
@@ -500,6 +518,21 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
             break;
         case 'R':
             mode='R';
+            break;
+        case 'O':
+            setOrthogonal();
+            break;
+        case'P':
+            setPerspective();
+            break;
+        case'E':
+            setViewingMatrix();
+            break;
+        case'C':
+            setViewingMatrix();
+            break;
+        case'U':
+            setViewingMatrix();
             break;
         default:
             break;

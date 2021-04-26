@@ -31,6 +31,7 @@ double cursor_x=0,cursor_y=0,start_x=0,start_y=0,end_x=0,end_y=0,scroll_z=0,z_ti
 char mode='T';
 bool click=false;// to remeber the state of mouse, by myself;
 int change_model=0,now_model=0;
+
 enum TransMode
 {
 	GeoTranslation = 0,
@@ -78,9 +79,7 @@ enum ProjMode
 ProjMode cur_proj_mode = Orthogonal;
 TransMode cur_trans_mode = GeoTranslation;
 
-Matrix4 view_matrix;
-Matrix4 project_matrix;
-
+Matrix4 view_matrix,project_matrix,translation_matrix,rotation_matrix,scaling_matrix;
 
 typedef struct
 {
@@ -127,13 +126,12 @@ Matrix4 translate(Vector3 vec)
     if(click==true&&mode=='T'){
         end_x=cursor_x;
         end_y =cursor_y;
-        models[cur_idx].position[0]+=(end_x-start_x)/WINDOW_WIDTH;
-        models[cur_idx].position[1]+=-(end_y-start_y)/WINDOW_HEIGHT;
+        models[cur_idx].position[0]+=(end_x-start_x)/WINDOW_WIDTH*2;
+        models[cur_idx].position[1]+=-(end_y-start_y)/WINDOW_HEIGHT*2;
         start_x=end_x;
         start_y=end_y;
-        //cout<<models[cur_idx].position[0]<<" "<<models[cur_idx].position[1]<<endl;
     } // we can drag object after clicking
-   // cout<< models[cur_idx].position[0]<<" "<<models[cur_idx].position[1]<<endl;
+   
     if(z_time>0&&mode=='T'){
         models[cur_idx].position[2]+=scroll_z/100;
         --z_time;
@@ -144,12 +142,7 @@ Matrix4 translate(Vector3 vec)
     0,1,0,models[cur_idx].position[1],
     0,0,1,models[cur_idx].position[2],
     0,0,0,1);
-
-	/*
-	mat = Matrix4(
-		...
-	);
-	*/
+    translation_matrix=mat;
 
 	return mat;
 }
@@ -160,8 +153,8 @@ Matrix4 scaling(Vector3 vec)
     if(click==true&&mode=='S'){
             end_x=cursor_x;
             end_y =cursor_y;
-            models[cur_idx].scale[0]+=(end_x-start_x)/WINDOW_WIDTH;
-            models[cur_idx].scale[1]+=-(end_y-start_y)/WINDOW_HEIGHT;
+            models[cur_idx].scale[0]+=-(end_x-start_x)/WINDOW_WIDTH*2;
+            models[cur_idx].scale[1]+=-(end_y-start_y)/WINDOW_HEIGHT*2;
             start_x=end_x;
             start_y=end_y;
     }
@@ -171,18 +164,13 @@ Matrix4 scaling(Vector3 vec)
     }
 	Matrix4 mat;
 
-	/*
-	mat = Matrix4(
-		...
-	);
-	*/
-    
     mat=Matrix4(
     models[cur_idx].scale[0],0,0,0,
     0,models[cur_idx].scale[1],0,0,
     0,0,models[cur_idx].scale[2],0,
     0,0,0,1
-                );
+    );
+    scaling_matrix=mat;
 
 	return mat;
 }
@@ -193,7 +181,7 @@ Matrix4 rotateX(GLfloat val)
 {
     if(click==true&&mode=='R'){
             end_y =cursor_y;
-            models[cur_idx].rotation[1]+=-(end_y-start_y);
+            models[cur_idx].rotation[1]+=(end_y-start_y);
             start_y=end_y;
     }
     double pi=3.141592;
@@ -213,7 +201,7 @@ Matrix4 rotateY(GLfloat val)
 {
     if(click==true&&mode=='R'){
             end_x =cursor_x;
-            models[cur_idx].rotation[0]+=(end_x-start_x);
+            models[cur_idx].rotation[0]+=-(end_x-start_x);
             start_x=end_x;
     }
     double pi=3.141592;
@@ -244,14 +232,16 @@ Matrix4 rotateZ(GLfloat val)
     sin(theta),cos(theta),0,0,
     0,0,1,0,
     0,0,0,1);
-
+    
 	return mat;
 }
 
 Matrix4 rotate(Vector3 vec)
 {
-	return rotateX(vec.x)*rotateY(vec.y)*rotateZ(vec.z);
+        rotation_matrix=rotateX(vec.x)*rotateY(vec.y)*rotateZ(vec.z);
+    return rotation_matrix;
 }
+
 
 // [TODO] compute viewing matrix accroding to the setting of main_camera
 void setViewingMatrix()
@@ -260,32 +250,27 @@ void setViewingMatrix()
     Vector3 eye=main_camera.position;
     Vector3 center=main_camera.center;
     Vector3 up=main_camera.up_vector;
-    Vector3 Rx=(center-eye).cross((up-eye));
     Vector3 Rz=-(center-eye);
+    Vector3 Rx=-Rz.cross(up);
     Rx=Rx.normalize();
     Rz=Rz.normalize();
     Vector3 Ry=Rz.cross(Rx);
+    Ry=Ry.normalize();
     Matrix4 viewRotate,eyeMatrix;
+    //cout<<eye<<endl;
+    //cout<<up-eye<<endl;
+
     viewRotate=Matrix4(
-    Rx[0],Ry[0],Rz[0],0,
-    Rx[1],Ry[1],Rz[1],0,
-    Rx[2],Ry[2],Rz[2],0,
-    0,0,0,1
-                       
-                       );
+    Rx[0],Rx[1],Rx[2],0,
+    Ry[0],Ry[1],Ry[2],0,
+    Rz[0],Rz[1],Rz[2],0,
+    0,0,0,1);
     eyeMatrix=Matrix4(
     1,0,0,-eye[0],
     0,1,0,-eye[1],
     0,0,1,-eye[2],
     0,0,0,1);
-   viewRotate=viewRotate.invert();
-   view_matrix=viewRotate*eyeMatrix;
-    /*for(int i=0;i<=15;++i){
-        cout<<view_matrix[i]<<" ";
-        if((i%4)==3){
-            cout<<endl;
-        }
-    }*/
+    view_matrix=viewRotate*eyeMatrix;
     
  
 }
@@ -313,7 +298,7 @@ void setOrthogonal()
         0,0,z,z1,
         0,0,0,1
     };
-    cout<<" x "<<x<<" y "<<y<<" z "<<z<<" x1 "<<x1<<" y1 "<<y1<<" z1 "<<z1<<endl;
+    
 }
 
 // [TODO] compute persepective projection matrix
@@ -338,6 +323,62 @@ void setPerspective()
         0,0,-1,0
     };
     
+}
+
+
+
+void changeView(){
+    Vector3 target(0,0,0);
+    if(click==true){
+            end_x=cursor_x;
+            end_y =cursor_y;
+            target[0]+=(end_x-start_x)/WINDOW_WIDTH*2;
+            target[1]+=(end_y-start_y)/WINDOW_HEIGHT*2;
+            start_x=end_x;
+            start_y=end_y;
+    }
+    if(z_time>0){
+        target[2]+=scroll_z/100;
+        --z_time;
+    }
+    if (mode=='C') {
+        main_camera.center[0]-=target[0];
+        main_camera.center[1]+=target[1];
+        main_camera.center[2]+=target[2];
+        if(target[0]!=0||target[1]!=0||target[2]!=0){
+            std::cout<<"camera viewing direction("<<main_camera.center[0]<<","<<main_camera.center[1]<<","<<main_camera.center[2]<<")"<<endl;
+            
+        }
+        
+    }
+    else if (mode=='E') {
+        main_camera.position[0]-=target[0];
+        main_camera.position[1]-=target[1];
+        main_camera.position[2]-=target[2];
+        if(target[0]!=0||target[1]!=0||target[2]!=0){
+            std::cout<<"camera position("<<main_camera.position[0]<<","<<main_camera.position[1]<<","<<main_camera.position[2]<<")"<<endl;
+            
+        }
+      
+        
+    }
+    else if (mode=='U') {
+        main_camera.up_vector[0]-=target[0];
+        main_camera.up_vector[1]+=target[1];
+        main_camera.up_vector[2]-=target[2];
+        if(target[0]!=0||target[1]!=0||target[2]!=0){
+            std::cout<<"camera up vector("<<main_camera.up_vector[0]<<","<<main_camera.up_vector[1]<<","<<main_camera.up_vector[2]<<")"<<endl;
+            
+        }
+       
+        
+    }
+    
+    
+    
+    
+    
+    setViewingMatrix();
 }
 
 
@@ -482,6 +523,40 @@ void RenderScene(void) {
 	drawPlane();
 
 }
+void printInform(){
+    std::cout<<"View Matrix:"<<std::endl;
+    std::cout<<view_matrix<<endl;
+    std::cout<<"Perspective Matrix:"<<std::endl;
+    std::cout<<project_matrix<<endl;
+    std::cout<<"Translation Matrix:"<<std::endl;
+    std::cout<<translation_matrix<<endl;
+    std::cout<<"Rotate Matrix:"<<std::endl;
+    std::cout<<rotation_matrix<<endl;
+    std::cout<<"Scaling Matrix:"<<std::endl;
+    std::cout<<scaling_matrix<<endl;
+    
+    
+    
+    /*1,0,0,models[cur_idx].position[0],
+    0,1,0,models[cur_idx].position[1],
+    0,0,1,models[cur_idx].position[2],
+    0,0,0,1*/
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+}
 
 void setupRC();
 void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -491,7 +566,7 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         case 'Z':
             if(change_model-now_model>10){     //to avoid changing models too quickly
                 ++cur_idx;
-                if (cur_idx>=5) {
+                if (cur_idx>models.size()-1) {
                     cur_idx=0;
                 }
                 now_model=change_model;
@@ -526,19 +601,23 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
             setPerspective();
             break;
         case'E':
-            setViewingMatrix();
+            mode='E';
             break;
         case'C':
-            setViewingMatrix();
+            mode='C';
             break;
         case'U':
-            setViewingMatrix();
+            mode='U';
+            break;
+        case'I':
+            printInform();
             break;
         default:
             break;
        
     }
 }
+
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
@@ -831,7 +910,7 @@ void initParameter()
                                                
 	main_camera.position = Vector3(0.0f, 0.0f, 2.0f);
 	main_camera.center = Vector3(0.0f, 0.0f, 0.0f);
-	main_camera.up_vector = Vector3(0.0f, 1.0f, 0.0f);
+	main_camera.up_vector = Vector3(0.0f, 1.0f, 0.0f);       //vector not position
 
 	setViewingMatrix();
 	setPerspective();	//set default projection matrix as perspective matrix
@@ -920,7 +999,9 @@ int main(int argc, char **argv)
     int last_curr_idx=cur_idx;
 	// main loop
     while (!glfwWindowShouldClose(window))
-    {
+    {   if(mode=='E'||mode=='C'||mode=='U'){
+        changeView();
+        }
         change_model++;
         // render
         RenderScene();

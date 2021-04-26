@@ -20,7 +20,7 @@
 using namespace std;
 
 // Default window size
-const int WINDOW_WIDTH = 800;
+const int WINDOW_WIDTH = 600;
 const int WINDOW_HEIGHT = 600;
 
 bool isDrawWireframe = false;
@@ -31,6 +31,9 @@ double cursor_x=0,cursor_y=0,start_x=0,start_y=0,end_x=0,end_y=0,scroll_z=0,z_ti
 char mode='T';
 bool click=false;// to remeber the state of mouse, by myself;
 int change_model=0,now_model=0;
+bool solid_trigger=1,windows_trigger=0; //switch solid and wireframe
+int change_width=WINDOW_WIDTH;
+int change_height=WINDOW_HEIGHT;
 
 enum TransMode
 {
@@ -76,7 +79,7 @@ enum ProjMode
 	Orthogonal = 0,
 	Perspective = 1,
 };
-ProjMode cur_proj_mode = Orthogonal;
+ProjMode cur_proj_mode = Perspective;
 TransMode cur_trans_mode = GeoTranslation;
 
 Matrix4 view_matrix,project_matrix,translation_matrix,rotation_matrix,scaling_matrix;
@@ -126,8 +129,8 @@ Matrix4 translate(Vector3 vec)
     if(click==true&&mode=='T'){
         end_x=cursor_x;
         end_y =cursor_y;
-        models[cur_idx].position[0]+=(end_x-start_x)/WINDOW_WIDTH*2;
-        models[cur_idx].position[1]+=-(end_y-start_y)/WINDOW_HEIGHT*2;
+        models[cur_idx].position[0]+=(end_x-start_x)/change_width*2;
+        models[cur_idx].position[1]+=-(end_y-start_y)/change_height*2;
         start_x=end_x;
         start_y=end_y;
     } // we can drag object after clicking
@@ -136,7 +139,6 @@ Matrix4 translate(Vector3 vec)
         models[cur_idx].position[2]+=scroll_z/100;
         --z_time;
     }
-    //cout<< models[cur_idx].position[2]<<endl;
     mat=Matrix4(
     1,0,0,models[cur_idx].position[0],
     0,1,0,models[cur_idx].position[1],
@@ -153,8 +155,8 @@ Matrix4 scaling(Vector3 vec)
     if(click==true&&mode=='S'){
             end_x=cursor_x;
             end_y =cursor_y;
-            models[cur_idx].scale[0]+=-(end_x-start_x)/WINDOW_WIDTH*2;
-            models[cur_idx].scale[1]+=-(end_y-start_y)/WINDOW_HEIGHT*2;
+            models[cur_idx].scale[0]+=-(end_x-start_x)/change_width*2;
+            models[cur_idx].scale[1]+=-(end_y-start_y)/change_height*2;
             start_x=end_x;
             start_y=end_y;
     }
@@ -181,7 +183,7 @@ Matrix4 rotateX(GLfloat val)
 {
     if(click==true&&mode=='R'){
             end_y =cursor_y;
-            models[cur_idx].rotation[1]+=(end_y-start_y);
+            models[cur_idx].rotation[1]-=(end_y-start_y);
             start_y=end_y;
     }
     double pi=3.141592;
@@ -257,8 +259,6 @@ void setViewingMatrix()
     Vector3 Ry=Rz.cross(Rx);
     Ry=Ry.normalize();
     Matrix4 viewRotate,eyeMatrix;
-    //cout<<eye<<endl;
-    //cout<<up-eye<<endl;
 
     viewRotate=Matrix4(
     Rx[0],Rx[1],Rx[2],0,
@@ -284,13 +284,20 @@ void setOrthogonal()
     double bottom=proj.bottom;                              //bottom = -top;
     double right=proj.right;                   //right = top * aspect
     double left=proj.left;                             //left = -right
+    float origin_rate=((float)WINDOW_WIDTH/(float)WINDOW_HEIGHT);
+    double herizon_range=proj.aspect/origin_rate;
     float x=2/(right-left);
     float y=2/(top-bottom);
     float z=-2/(proj.farClip-proj.nearClip);
     float z1=-(proj.farClip+proj.nearClip)/(proj.farClip-proj.nearClip);
     float x1=-(right+left)/(right-left);
     float y1=-(top+bottom)/(top-bottom);
-    //cout<<proj.aspect<<endl
+    if(herizon_range>=1){
+        x/=herizon_range;
+    }
+    else{
+        y*=herizon_range;
+    }
     
     project_matrix={
         x,0,0,x1,
@@ -315,13 +322,13 @@ void setPerspective()
     float y=2*proj.nearClip/(top-bottom);
     float z=-(proj.nearClip+proj.farClip)/(proj.farClip-proj.nearClip);
     float z1=2*proj.farClip*proj.nearClip/(proj.nearClip-proj.farClip);
-    //cout<<proj.aspect<<endl
     project_matrix={
         x,0,0,0,
         0,y,0,0,
         0,0,z,z1,
         0,0,-1,0
     };
+   
     
 }
 
@@ -388,11 +395,21 @@ GLuint VAO, VBO;
 // Call back function for window reshape
 void ChangeSize(GLFWwindow* window, int width, int height)
 {
-	glViewport(0, 0, width, height);
-	// [TODO] change your aspect ratio in both perspective and orthogonal view
+    glViewport(0, 0, width, height);
+    // [TODO] change your aspect ratio in both perspective and orthogonal view
+    change_width=width;
+    change_height=height;
     proj.aspect=(float)width/height;
-    setPerspective();
-    
+    windows_trigger=1;
+    if(cur_proj_mode==Perspective){
+        setPerspective();
+    }
+    else{
+        setOrthogonal();
+    }
+   
+        
+	
     
 }
 
@@ -433,10 +450,6 @@ void drawPlane()
     // [TODO] row-major ---> column-major
     origin_mvp=project_matrix*view_matrix*origin_mvp;
     MVP=origin_mvp;//combine all matrix by myself
-	/*mvp[0] = 1;  mvp[4] = 0;   mvp[8] = 0;    mvp[12] = 0;
-	mvp[1] = 0;  mvp[5] = 1;   mvp[9] = 0;    mvp[13] = 0;
-	mvp[2] = 0;  mvp[6] = 0;   mvp[10] = 1;   mvp[14] = 0;
-	mvp[3] = 0; mvp[7] = 0;  mvp[11] = 0;   mvp[15] = 1;*/
     mvp[0] = MVP[0];  mvp[4] =MVP[1];   mvp[8] = MVP[2];    mvp[12] = MVP[3];
     mvp[1] = MVP[4];  mvp[5] = MVP[5];   mvp[9] = MVP[6];    mvp[13] =MVP[7];
     mvp[2] = MVP[8];  mvp[6] = MVP[9];   mvp[10] =MVP[10];   mvp[14] = MVP[11];
@@ -464,8 +477,8 @@ void drawPlane()
     glEnableVertexAttribArray(1);
     glUniformMatrix4fv(iLocMVP, 1, GL_FALSE, mvp);
     glBindVertexArray(tmp_shape.vao);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glDrawArrays(GL_TRIANGLES, 0,sizeof(vertices));
-    //cout<<sizeof(vertices)<<endl;
     glBindVertexArray(0);
     //by myself
     
@@ -496,28 +509,18 @@ void RenderScene(void) {
 	// [TODO] row-major ---> column-major
     origin_mvp=project_matrix*view_matrix*origin_mvp;
     MVP=origin_mvp*T*R*S;//combine all matrix by myself
-   
-    
-	/*mvp[0] = 1;  mvp[4] = 0;   mvp[8] = 0;    mvp[12] = 0;
-	mvp[1] = 0;  mvp[5] = 1;   mvp[9] = 0;    mvp[13] = 0;
-	mvp[2] = 0;  mvp[6] = 0;   mvp[10] = 1;   mvp[14] = 0;
-	mvp[3] = 0; mvp[7] = 0;  mvp[11] = 0;   mvp[15] = 1;*/
     mvp[0] = MVP[0];  mvp[4] =MVP[1];   mvp[8] = MVP[2];    mvp[12] = MVP[3];
     mvp[1] = MVP[4];  mvp[5] = MVP[5];   mvp[9] = MVP[6];    mvp[13] =MVP[7];
     mvp[2] = MVP[8];  mvp[6] = MVP[9];   mvp[10] =MVP[10];   mvp[14] = MVP[11];
     mvp[3] = MVP[12];  mvp[7] = MVP[13];  mvp[11] = MVP[14];   mvp[15] = MVP[15];
-    /*cout<<MVP[0]<<" "<<MVP[1]<<" "<<MVP[2]<<" "<<MVP[3]<<endl;
-    cout<<MVP[4]<<" "<<MVP[5]<<" "<<MVP[6]<<" "<<MVP[7]<<endl;
-    cout<<MVP[8]<<" "<<MVP[9]<<" "<<MVP[10]<<" "<<MVP[11]<<endl;
-    cout<<MVP[12]<<" "<<MVP[13]<<" "<<MVP[14]<<" "<<MVP[15]<<endl;
-    cout<<cursor_x<<" "<<cursor_y<<endl;
-    cout<<"//////////////////"<<endl;*/
 	// use uniform to send mvp to vertex shader
 	// [TODO] draw 3D model in solid or in wireframe mode here, and draw plane
     
 	glUniformMatrix4fv(iLocMVP, 1, GL_FALSE, mvp);
 	glBindVertexArray(m_shape_list[cur_idx].vao);
-    //      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    if(!solid_trigger){
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    }
 	glDrawArrays(GL_TRIANGLES, 0, m_shape_list[cur_idx].vertex_count);
 	glBindVertexArray(0);
 	drawPlane();
@@ -535,27 +538,6 @@ void printInform(){
     std::cout<<"Scaling Matrix:"<<std::endl;
     std::cout<<scaling_matrix<<endl;
     
-    
-    
-    /*1,0,0,models[cur_idx].position[0],
-    0,1,0,models[cur_idx].position[1],
-    0,0,1,models[cur_idx].position[2],
-    0,0,0,1*/
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
 }
 
 void setupRC();
@@ -572,7 +554,6 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
                 now_model=change_model;
             }
         case 'X':
-            //cout<<now_model<<" "<<change_model<<endl;
             if(change_model-now_model>10){     //to avoid changing models too quickly
                 --cur_idx;
                 if (cur_idx<0) {
@@ -580,11 +561,16 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
                 }
                 now_model=change_model;
             }
-          
-           
-            //std::cout<<cur_idx<<endl;
             break;
-        
+        case 'W':
+            if(change_model-now_model>10){
+                if(solid_trigger){
+                    solid_trigger=0;
+                }
+                else solid_trigger=1;
+                now_model=change_model;
+            }
+            break;
         case 'T':
             mode='T';
             break;
@@ -630,7 +616,6 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
 	// [TODO] Call back function for mouse
-    //cout<<button<<" "<<action<<" "<<mods<<endl;
     if(action==true&&click==false) {
         start_x=cursor_x;start_y=cursor_y;
         click=true;
@@ -639,9 +624,6 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
     if (action==false){
         click=false;
     }
-  
-      
-    //cout<<action<<" "<<click<<endl;
     
 		
 }
@@ -816,7 +798,6 @@ void normalization(tinyobj::attrib_t* attrib, vector<GLfloat>& vertices, vector<
 
 	for (int i = 0; i < attrib->vertices.size(); i++)
 	{
-		//std::cout << i << " = " << (double)(attrib.vertices.at(i) / greatestAxis) << std::endl;
 		attrib->vertices.at(i) = attrib->vertices.at(i)/ scale;
 	}
 	size_t index_offset = 0;
@@ -906,7 +887,7 @@ void initParameter()
 	proj.nearClip = 0.001;
 	proj.farClip = 100.0;
 	proj.fovy = 80;
-	proj.aspect = (float)WINDOW_WIDTH / (float)WINDOW_HEIGHT;
+	proj.aspect = (float)change_width / (float)change_height;
                                                
 	main_camera.position = Vector3(0.0f, 0.0f, 2.0f);
 	main_camera.center = Vector3(0.0f, 0.0f, 0.0f);
@@ -999,7 +980,8 @@ int main(int argc, char **argv)
     int last_curr_idx=cur_idx;
 	// main loop
     while (!glfwWindowShouldClose(window))
-    {   if(mode=='E'||mode=='C'||mode=='U'){
+    {
+        if(mode=='E'||mode=='C'||mode=='U'){
         changeView();
         }
         change_model++;

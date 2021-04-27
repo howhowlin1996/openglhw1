@@ -373,8 +373,8 @@ void changeView(){
     }
     else if (mode=='U') {
         main_camera.up_vector[0]-=target[0];
-        main_camera.up_vector[1]+=target[1];
-        main_camera.up_vector[2]-=target[2];
+        main_camera.up_vector[1]-=target[1];
+        main_camera.up_vector[2]+=target[2];
         if(target[0]!=0||target[1]!=0||target[2]!=0){
             std::cout<<"camera up vector("<<main_camera.up_vector[0]<<","<<main_camera.up_vector[1]<<","<<main_camera.up_vector[2]<<")"<<endl;
             

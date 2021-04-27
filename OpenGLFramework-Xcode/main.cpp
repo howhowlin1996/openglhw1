@@ -321,10 +321,12 @@ void setPerspective()
     float x=2*proj.nearClip/(right-left);
     float y=2*proj.nearClip/(top-bottom);
     float z=-(proj.nearClip+proj.farClip)/(proj.farClip-proj.nearClip);
+    float x1=-proj.nearClip*(right+left)/(right-left);                       //-near*(right+left)/(right-left)
+    float y1=-proj.nearClip*(top+bottom)/(top-bottom);                               //-near*(top+bottom)/(top-bottom)
     float z1=2*proj.farClip*proj.nearClip/(proj.nearClip-proj.farClip);
     project_matrix={
-        x,0,0,0,
-        0,y,0,0,
+        x,0,0,x1,
+        0,y,0,y1,
         0,0,z,z1,
         0,0,-1,0
     };
@@ -596,7 +598,10 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
             mode='U';
             break;
         case'I':
-            printInform();
+            if(change_model-now_model>10){
+                printInform();
+                now_model=change_model;
+            }
             break;
         default:
             break;
